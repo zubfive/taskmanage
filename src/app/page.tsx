@@ -4,11 +4,14 @@ import { api } from "@/trpc/react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 
-type TaskFormData = {
+type Task = {
+  id: string;
   title: string;
   description: string;
   status: "Pending" | "Approved";
 };
+
+type TaskFormData = Omit<Task, "id">;
 
 export default function TaskForm() {
   const { register, handleSubmit, reset, setValue } = useForm<TaskFormData>();
@@ -19,10 +22,10 @@ export default function TaskForm() {
 
   // Create task mutation
   const createTask = api.task.create.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       alert("Task added successfully!");
       reset();
-      refetch();
+      await refetch();
     },
     onError: (error) => {
       alert(`Error: ${error.message}`);
@@ -31,11 +34,11 @@ export default function TaskForm() {
 
   // Update task mutation
   const updateTask = api.task.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       alert("Task updated successfully!");
       setEditingTaskId(null);
       reset();
-      refetch();
+      await refetch();
     },
     onError: (error) => {
       alert(`Error: ${error.message}`);
@@ -44,9 +47,9 @@ export default function TaskForm() {
 
   // Delete task mutation
   const deleteTask = api.task.delete.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       alert("Task deleted successfully!");
-      refetch();
+      await refetch();
     },
     onError: (error) => {
       alert(`Error: ${error.message}`);
@@ -56,22 +59,26 @@ export default function TaskForm() {
   // Handle form submission
   const onSubmit = (data: TaskFormData) => {
     if (editingTaskId) {
-      // Update existing task
       updateTask.mutate({ id: editingTaskId, ...data });
     } else {
-      // Create new task (exclude id)
       createTask.mutate(data);
     }
   };
 
   // Handle edit click
-  const handleEdit = (task: any) => {
+  const handleEdit = (task: {
+    id: string;
+    title: string | null;
+    description: string;
+    status: "Pending" | "Approved" | null;
+    createdAt: Date;
+  }) => {
     setEditingTaskId(task.id);
-    setValue("title", task.title);
+    setValue("title", task.title ?? ""); // Default to empty string if null
     setValue("description", task.description);
-    setValue("status", task.status);
+    setValue("status", task.status ?? "Pending"); // Default to "Pending" if null
   };
-
+  
   // Handle delete click
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this task?")) {
@@ -142,29 +149,30 @@ export default function TaskForm() {
         {tasks?.length === 0 && <p className="text-center text-gray-500">No tasks found.</p>}
 
         <ul className="divide-y divide-gray-200">
-          {tasks?.map((task) => (
-            <li key={task.id} className="py-4 flex justify-between items-center">
-              <div>
-                <p><strong>Title:</strong> {task.title}</p>
-                <p><strong>Description:</strong> {task.description}</p>
-                <p><strong>Status:</strong> {task.status}</p>
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleEdit(task)}
-                  className="bg-red-300 text-white px-2 py-1 rounded-md"
-                >
-                  🖋️
-                </button>
-                <button
-                  onClick={() => handleDelete(task.id)}
-                  className="bg-lime-600 text-white px-2 py-1 rounded-md"
-                >
-                  🗑️
-                </button>
-              </div>
-            </li>
-          ))}
+        {tasks?.map((task) => (
+  <li key={task.id} className="py-4 flex justify-between items-center">
+    <div>
+      <p><strong>Title:</strong> {task.title ?? "Untitled"}</p>
+      <p><strong>Description:</strong> {task.description}</p>
+      <p><strong>Status:</strong> {task.status ?? "Pending"}</p>
+    </div>
+    <div className="flex space-x-2">
+      <button
+        onClick={() => handleEdit(task)}
+        className="bg-red-300 text-white px-2 py-1 rounded-md"
+      >
+        🖋️
+      </button>
+      <button
+        onClick={() => handleDelete(task.id)}
+        className="bg-lime-600 text-white px-2 py-1 rounded-md"
+      >
+        🗑️
+      </button>
+    </div>
+  </li>
+))}
+
         </ul>
       </div>
     </div>
