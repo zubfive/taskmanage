@@ -1,179 +1,79 @@
 "use client";
-
-import { api } from "@/trpc/react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { api } from "@/trpc/react";
 
-type Task = {
-  id: string;
-  title: string;
-  description: string;
-  status: "Pending" | "Approved";
-};
+interface SignUpFormValues {
+  email: string;
+  password: string;
+}
 
-type TaskFormData = Omit<Task, "id">;
+export default function Login() {
+  const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpFormValues>();
 
-export default function TaskForm() {
-  const { register, handleSubmit, reset, setValue } = useForm<TaskFormData>();
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-
-  // Fetch all tasks
-  const { data: tasks, refetch, isLoading } = api.task.getAllTask.useQuery();
-
-  // Create task mutation
-  const createTask = api.task.create.useMutation({
-    onSuccess: async () => {
-      alert("Task added successfully!");
-      reset();
-      await refetch();
-    },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
+  const { mutate, isPending } = api.user.login.useMutation({
+    onSuccess: ({ user }) => {
+      if (user) router.push("/taskmanage");
     },
   });
 
-  // Update task mutation
-  const updateTask = api.task.update.useMutation({
-    onSuccess: async () => {
-      alert("Task updated successfully!");
-      setEditingTaskId(null);
-      reset();
-      await refetch();
-    },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
-    },
-  });
-
-  // Delete task mutation
-  const deleteTask = api.task.delete.useMutation({
-    onSuccess: async () => {
-      alert("Task deleted successfully!");
-      await refetch();
-    },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
-    },
-  });
-
-  // Handle form submission
-  const onSubmit = (data: TaskFormData) => {
-    if (editingTaskId) {
-      updateTask.mutate({ id: editingTaskId, ...data });
-    } else {
-      createTask.mutate(data);
-    }
-  };
-
-  // Handle edit click
-  const handleEdit = (task: {
-    id: string;
-    title: string | null;
-    description: string;
-    status: "Pending" | "Approved" | null;
-    createdAt: Date;
-  }) => {
-    setEditingTaskId(task.id);
-    setValue("title", task.title ?? ""); // Default to empty string if null
-    setValue("description", task.description);
-    setValue("status", task.status ?? "Pending"); // Default to "Pending" if null
-  };
-  
-  // Handle delete click
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      deleteTask.mutate({ id });
-    }
+  const onSubmit = (data: SignUpFormValues) => {
+    mutate(data);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
-      {/* Task Form */}
-      <div className="bg-white p-6 rounded-lg shadow-md w-96 mb-6">
-        <h2 className="text-xl font-semibold mb-4 text-center">
-          {editingTaskId ? "Edit Task" : "Add Task"}
-        </h2>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Title</label>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-6">
+      <div className="w-full max-w-md shadow-lg rounded-xl bg-white p-6">
+        <div className="text-center text-2xl font-semibold text-gray-800">Welcome Back</div>
+        <p className="text-center text-gray-500 mb-4">Sign in to continue</p>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
             <input
-              {...register("title")}
-              type="text"
-              className="mt-1 p-2 w-full border rounded-md focus:ring focus:ring-blue-200"
-              placeholder="Enter title"
+              type="email"
+              placeholder="Email"
+              {...register("email", { required: "Email is required" })}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
+            {errors.email && (
+              <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+            )}
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              {...register("description")}
-              className="mt-1 p-2 w-full border rounded-md focus:ring focus:ring-blue-200"
-              placeholder="Enter description"
-            ></textarea>
+
+          <div>
+            <input
+              type="password"
+              placeholder="Password"
+              {...register("password", { required: "Password is required" })}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            {errors.password && (
+              <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
+            )}
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Status</label>
-            <select
-              {...register("status")}
-              className="mt-1 p-2 w-full border rounded-md focus:ring focus:ring-blue-200"
+
+          <div className="flex justify-between text-sm text-gray-600">
+            <p className="cursor-pointer hover:text-blue-500">Forgot Password?</p>
+            <p
+              className="cursor-pointer hover:text-blue-500"
+              onClick={() => router.push("/auth/signup")}
             >
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-            </select>
+              Create Account
+            </p>
           </div>
+
           <button
             type="submit"
-            className="w-full bg-[#A20707] text-white p-2 rounded-md hover:bg-blue-600"
+            className="w-full bg-red-800 hover:bg-black transition text-white py-2 rounded-lg"
+            disabled={isPending}
           >
-            {editingTaskId ? "Update Task" : "Add Task"}
+            {isPending ? "Signing In..." : "Sign In"}
           </button>
-          {editingTaskId && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditingTaskId(null);
-                reset();
-              }}
-              className="w-full bg-gray-500 text-white p-2 rounded-md mt-2"
-            >
-              Cancel
-            </button>
-          )}
         </form>
-      </div>
-
-      <div className="bg-white p-6 rounded-lg shadow-md w-96">
-        <h2 className="text-xl font-semibold mb-4 text-center">Task List</h2>
-
-        {isLoading && <p className="text-center text-gray-500">Loading...</p>}
-        {tasks?.length === 0 && <p className="text-center text-gray-500">No tasks found.</p>}
-
-        <ul className="divide-y divide-gray-200">
-        {tasks?.map((task) => (
-  <li key={task.id} className="py-4 flex justify-between items-center">
-    <div>
-      <p><strong>Title:</strong> {task.title ?? "Untitled"}</p>
-      <p><strong>Description:</strong> {task.description}</p>
-      <p><strong>Status:</strong> {task.status ?? "Pending"}</p>
-    </div>
-    <div className="flex space-x-2">
-      <button
-        onClick={() => handleEdit(task)}
-        className="bg-red-300 text-white px-2 py-1 rounded-md"
-      >
-        🖋️
-      </button>
-      <button
-        onClick={() => handleDelete(task.id)}
-        className="bg-lime-600 text-white px-2 py-1 rounded-md"
-      >
-        🗑️
-      </button>
-    </div>
-  </li>
-))}
-
-        </ul>
       </div>
     </div>
   );

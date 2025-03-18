@@ -9,6 +9,7 @@ import {
   uuid,
   varchar,
   pgEnum,
+  text,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -41,3 +42,23 @@ export const taskmanager = createTable(
     
   },
 )
+export const usersTable = createTable("users", {
+  id: uuid("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").unique(),
+  passwordHash: text("hashed_password"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const sessionsTable = createTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => usersTable.id),
+  expiresAt: timestamp("expires_at", {
+    withTimezone: true,
+    mode: "date",
+  }).notNull(),
+});
