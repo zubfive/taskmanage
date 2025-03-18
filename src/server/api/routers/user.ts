@@ -1,12 +1,10 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
-import { TRPCError } from "@trpc/server";
 import { usersTable } from "@/server/db/schema";
 import { eq, or } from "drizzle-orm";
 import { lucia } from "@/server/auth";
 import { cookies } from "next/headers";
 import { hash, verify } from "@node-rs/argon2";
-import { generateIdFromEntropySize } from "lucia";
 import { db } from "@/server/db";
 
 
@@ -21,7 +19,7 @@ export const userRouter = createTRPCRouter({
                 password: z.string().min(1),
             }),
         )
-        .mutation(async ({ input: { name, email, phoneNumber, password  } ,ctx }) => {
+        .mutation(async ({ input: { name, email, password  } }) => {
             if (
                 typeof password !== "string" ||
                 password.length < 6 ||

@@ -24,9 +24,6 @@ export default function Login() {
       alert("Account Created");
       router.push("/taskmanage");
     },
-    onError: (error) => {
-      
-    },
   });
 
   const onSubmit = (data: SignUpFormValues) => {

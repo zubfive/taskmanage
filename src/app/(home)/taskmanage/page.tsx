@@ -3,7 +3,6 @@
 import { api } from "@/trpc/react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import { redirect } from 'next/navigation';
 import LogoutButton from "@/app/_components/logout";
 
 
