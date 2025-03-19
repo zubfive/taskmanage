@@ -14,12 +14,11 @@ export const userRouter = createTRPCRouter({
         .input(
             z.object({
                 name: z.string().min(1),
-                phoneNumber: z.string(),
                 email: z.string().email(),
                 password: z.string().min(1),
             }),
         )
-        .mutation(async ({ input: { name, email, password  } }) => {
+        .mutation(async ({ input: { name, email, password }}) => {
             if (
                 typeof password !== "string" ||
                 password.length < 6 ||
