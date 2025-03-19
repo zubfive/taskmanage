@@ -3,7 +3,6 @@
 import { api } from "@/trpc/react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import LogoutButton from "@/app/_components/logout";
 
 
 type Task = {
@@ -31,9 +30,7 @@ export default function TaskForm() {
       reset();
       await refetch();
     },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
-    },
+    
   });
 
   // Update task mutation
@@ -44,9 +41,7 @@ export default function TaskForm() {
       reset();
       await refetch();
     },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
-    },
+    
   });
 
   // Delete task mutation
@@ -55,9 +50,7 @@ export default function TaskForm() {
       alert("Task deleted successfully!");
       await refetch();
     },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
-    },
+    
   });
 
   // Handle form submission
@@ -91,14 +84,9 @@ export default function TaskForm() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
- <div className="w-full flex justify-end pb-4 pr-4 bg-white shadow-md">
-        <div className="">
-          <LogoutButton/>
-        </div>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
       {/* Task Form */}
-      <div className="bg-white p-6 rounded-lg shadow-md w-96 mb-6 mt-20">
+      <div className="bg-white p-6 rounded-lg shadow-md w-96 mb-6">
         <h2 className="text-xl font-semibold mb-4 text-center">
           {editingTaskId ? "Edit Task" : "Add Task"}
         </h2>
