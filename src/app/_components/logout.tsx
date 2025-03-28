@@ -7,7 +7,6 @@ import { api } from "@/trpc/react";
 const LogoutButton = () => {
   const router = useRouter();
 
-//   const { toast } = useToast();
   const { mutate, isPending } = api.user.logout.useMutation({
     onSuccess() {
     //   toast({

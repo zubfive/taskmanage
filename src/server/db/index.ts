@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-
+// import * as relations from "./relations";
 import { env } from "@/env";
 import * as schema from "./schema";
 
@@ -12,7 +12,11 @@ const globalForDb = globalThis as unknown as {
   conn: postgres.Sql | undefined;
 };
 
-const conn = globalForDb.conn ?? postgres(env.DATABASE_URL);
-if (env.NODE_ENV !== "production") globalForDb.conn = conn;
+export const connection = globalForDb.conn ?? postgres(env.DATABASE_URL);
+if (env.NODE_ENV !== "production") globalForDb.conn = connection;
 
-export const db = drizzle(conn, { schema });
+export const db = drizzle(connection, {
+  schema: {
+    ...schema,
+  },
+});

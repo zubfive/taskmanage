@@ -1,0 +1,1 @@
+ALTER TABLE "practice_task" ALTER COLUMN "user_id" DROP NOT NULL;

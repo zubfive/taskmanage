@@ -1,0 +1,1 @@
+ALTER TABLE "practice_users" ADD COLUMN "category" text DEFAULT 'user';

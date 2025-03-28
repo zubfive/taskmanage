@@ -1,0 +1,1 @@
+ALTER TABLE "practice_users" DROP COLUMN IF EXISTS "category";

@@ -14,7 +14,7 @@ export default function Login() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: {errors},
   } = useForm<SignUpFormValues>();
 
   const { mutate, isPending } = api.user.registerUser.useMutation({
@@ -27,12 +27,11 @@ export default function Login() {
   const onSubmit = (data: SignUpFormValues) => {
     mutate(data);
   };
-
+  
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
         <h2 className="mb-6 text-center text-2xl font-semibold text-gray-700">Sign Up</h2>
-        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <input
@@ -44,7 +43,6 @@ export default function Login() {
             />
             {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
           </div>
-
           <div>
             <input
               type="email"
@@ -55,7 +53,6 @@ export default function Login() {
             />
             {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
           </div>
-
           <div>
             <input
               type="password"
@@ -66,7 +63,6 @@ export default function Login() {
             />
             {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
           </div>
-
           <button
             type="submit"
             className="w-full rounded-md bg-red-800 px-4 py-2 text-white transition-all hover:bg-black disabled:bg-gray-400"
@@ -75,7 +71,6 @@ export default function Login() {
             {isPending ? "Submitting..." : "Sign Up"}
           </button>
         </form>
-
         <div className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
           <span

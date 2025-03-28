@@ -6,6 +6,7 @@ import { lucia } from "@/server/auth";
 import { cookies } from "next/headers";
 import { hash, verify } from "@node-rs/argon2";
 import { db } from "@/server/db";
+import { Cookie } from "lucia";
 
 
 
@@ -16,6 +17,7 @@ export const userRouter = createTRPCRouter({
                 name: z.string().min(1),
                 email: z.string().email(),
                 password: z.string().min(1),
+                
             }),
         )
         .mutation(async ({ input: { name, email, password }}) => {
@@ -106,6 +108,7 @@ export const userRouter = createTRPCRouter({
             });
 
             const sessionCookie = lucia.createSessionCookie(session.id);
+            console.log(sessionCookie);
 
             (await cookies()).set(
                 sessionCookie.name,
@@ -113,17 +116,19 @@ export const userRouter = createTRPCRouter({
                 sessionCookie.attributes,
             );
 
+            // console.log();
             return { user };
         }),
 
-
-        getUser: protectedProcedure.query(async ({ ctx }) => {
-            const user = await db.query.usersTable.findFirst({
-                where: eq(usersTable.id, ctx.user.id),
-            });
-    
-            return user;
-        }),
+    getUser: protectedProcedure.query(async ({ ctx }) => {
+        const user = await db.query.usersTable.findFirst({
+        where: eq(usersTable.id, ctx.user.id),
+         });
+        
+         return user;
+    }),
+        
+        
 
     logout: protectedProcedure.mutation(async ({ ctx }) => {
         await lucia.invalidateSession(ctx.session.id);

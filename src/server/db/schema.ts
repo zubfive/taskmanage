@@ -19,8 +19,7 @@ import {
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
 
-export const statusEnum = pgEnum("practice_status", ["Pending", "Approved"]);
-
+export const statusEnum = pgEnum("practice_status", ["Pending", "inProgress", "Completed"]);
 
 export const createTable = pgTableCreator((name) => `practice_${name}`);
 
@@ -36,12 +35,15 @@ export const taskmanager = createTable(
     title: varchar("title"),
     description: varchar("description").notNull(),
     status: statusEnum("status").default("Pending"),
+    userId: uuid("user_id")
+    .notNull()
+    .references(() => usersTable.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    
   },
 )
+
 export const usersTable = createTable("users", {
   id: uuid("id")
     .primaryKey()
@@ -49,8 +51,10 @@ export const usersTable = createTable("users", {
   name: text("name").notNull(),
   email: text("email").unique(),
   passwordHash: text("hashed_password"),
+  category: text("category").default("user"), 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
+
 
 export const sessionsTable = createTable("sessions", {
   id: text("id").primaryKey(),

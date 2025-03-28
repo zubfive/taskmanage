@@ -3,16 +3,20 @@
 import { api } from "@/trpc/react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import { redirect } from "next/navigation";
+
 
 
 type Task = {
   id: string;
   title: string;
   description: string;
-  status: "Pending" | "Approved";
+  status: "Pending" | "inProgress" | "Completed";
 };
 
 type TaskFormData = Omit<Task, "id">;
+
+
 
 export default function TaskForm() {
 
@@ -20,7 +24,16 @@ export default function TaskForm() {
   const { register, handleSubmit, reset, setValue } = useForm<TaskFormData>();
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
-  // Fetch all tasks
+  const use = api.user.getUser.useQuery();
+
+  console.log(use);
+
+
+  if (!use) {
+    redirect("/");
+  }
+
+  
   const { data: tasks, refetch, isLoading } = api.task.getAllTask.useQuery();
 
   // Create task mutation
@@ -67,7 +80,7 @@ export default function TaskForm() {
     id: string;
     title: string | null;
     description: string;
-    status: "Pending" | "Approved" | null;
+    status: "Pending" | "inProgress" | "Completed" | null;
     createdAt: Date;
   }) => {
     setEditingTaskId(task.id);
@@ -115,7 +128,9 @@ export default function TaskForm() {
               className="mt-1 p-2 w-full border rounded-md focus:ring focus:ring-blue-200"
             >
               <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
+              <option value="inProgress">inProgress</option>
+              <option value="Completed">Completed</option>
+
             </select>
           </div>
           <button
