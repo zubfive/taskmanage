@@ -1,49 +1,62 @@
 "use client";
 
-// import { Pencil, Trash2, Eye } from "lucide-react";
+import { useState } from "react";
 import { api } from "@/trpc/react";
-// import { useState } from "react";
-// import { toast } from "react-hot-toast";
-
-// type Task = {
-//   id: string;
-//   name: string;
-//   title: string;
-//   description: string;
-//   status: "Pending" | "inProgress" | "Completed";
-// };
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 
 export default function Dashboard() {
-  const { data: tasks, isLoading, isError } = api.admin.getAllAdminTasks.useQuery();
-//   const deleteMutation = api.admin.delete.useMutation();
- // For refreshing data after delete
+  const { data: tasks, isLoading, isError, refetch } = api.admin.getAllAdminTasks.useQuery();
+  const updateTaskMutation = api.admin.updateAdmin.useMutation();
 
-  // Handle Delete
-//   const handleDelete = async (taskId: string) => {
-    // if (!confirm("Are you sure you want to delete this task?")) return;
+  const router = useRouter();
+
+  const deleteTask = api.task.delete.useMutation({
+    onSuccess: async () => {
+      alert("Task deleted successfully!");
+      await refetch();
+    },
     
-    // try {
-    //   await deleteMutation.mutateAsync({ id: taskId });
-    //   toast.success("Task deleted successfully!");
-    //   utils.admin.getAllTasks.invalidate(); // Refresh list
-    // } catch (error) {
-    //   toast.error("Failed to delete task.");
-    // }
-//   };
+  });
 
-  // Handle View Task
-//   const handleView = (task: Task) => {
-//     alert(`Viewing Task: ${task.title}\nDescription: ${task.description}`);
-//   };
-
-  // Handle Edit Task (Placeholder)
-//   const handleEdit = (task: Task) => {
-//     alert(`Editing Task: ${task.title}`);
-//     // Navigate to edit page or open modal
-//   };
+  const [editingTask, setEditingTask] = useState(null);
+  const [editForm, setEditForm] = useState({
+    id: "",
+    title: "",
+    description: "",
+    status: "Pending",
+  });
 
   if (isLoading) return <p className="text-center mt-10">Loading tasks...</p>;
   if (isError) return <p className="text-center text-red-500">Error loading tasks</p>;
+
+  // const handleEdit = (task) => {
+  //   setEditingTask(task);
+  //   setEditForm({
+  //     id: task.id,
+  //     title: task.title,
+  //     description: task.description,
+  //     status: task.status,
+  //   });
+  // };
+
+  // const handleUpdate = async () => {
+  //   try {
+  //     await updateTaskMutation.mutateAsync(editForm);
+  //     toast.success("Task updated successfully!");
+  //     setEditingTask(null);
+  //     await refetch();
+  //   } catch (error) {
+  //     toast.error("Failed to update task.");
+  //   }
+  // };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure you want to delete this task?")) {
+      deleteTask.mutate({ id });
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -55,7 +68,6 @@ export default function Dashboard() {
             <thead className="bg-gray-200">
               <tr>
                 <th className="border p-3 text-left">Task ID</th>
-                <th className="border p-3 text-left">Name</th>
                 <th className="border p-3 text-left">Title</th>
                 <th className="border p-3 text-left">Description</th>
                 <th className="border p-3 text-left">Status</th>
@@ -67,28 +79,10 @@ export default function Dashboard() {
                 <tr key={task.id} className="hover:bg-gray-100">
                   <td className="border p-3">{task.id}</td>
                   <td className="border p-3">{task.title}</td>
-                  <td className="border p-3">{task.title}</td>
                   <td className="border p-3">{task.description}</td>
                   <td className="border p-3">{task.status}</td>
                   <td className="border p-3 flex justify-center space-x-2">
-                    {/* <button
-                      className="p-2 bg-gray-200 rounded hover:bg-gray-300"
-                      onClick={}
-                    >
-                      <Eye size={18} />
-                    </button> */}
-                    {/* <button
-                      className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                      onClick={}
-                    >
-                      <Pencil size={18} />
-                    </button> */}
-                    {/* <button
-                      className="p-2 bg-red-500 text-white rounded hover:bg-red-600"
-                      onClick={()}
-                    >
-                      <Trash2 size={18} />
-                    </button> */}
+
                   </td>
                 </tr>
               ))}
@@ -96,21 +90,40 @@ export default function Dashboard() {
           </table>
         </div>
       </div>
+
+      {/* Edit Form Modal */}
+      {editingTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white rounded p-6 shadow-lg w-96">
+            <h2 className="text-xl font-bold mb-4">Edit Task</h2>
+            <input
+              type="text"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              className="w-full mb-3 p-2 border rounded"
+              placeholder="Title"
+            />
+            <textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              className="w-full mb-3 p-2 border rounded"
+              placeholder="Description"
+            ></textarea>
+            <select
+              value={editForm.status}
+              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+              className="w-full mb-3 p-2 border rounded"
+            >
+              <option value="Pending">Pending</option>
+              <option value="inProgress">inProgress</option>
+              <option value="Completed">Completed</option>
+            </select>
+            <div className="flex justify-between">
+              
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-// Badge UI for Task Status
-// const getStatusBadge = (status: string) => {
-//   const statusColors: Record<string, string> = {
-//     Pending: "bg-yellow-500 text-white",
-//     inProgress: "bg-blue-500 text-white",
-//     Completed: "bg-green-500 text-white",
-//   };
-
-//   return (
-//     <span className={`px-3 py-1 text-sm font-semibold rounded ${statusColors[status]}`}>
-//       {status}
-//     </span>
-//   );
-// };

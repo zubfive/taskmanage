@@ -18,9 +18,16 @@ export default function Login() {
 
   const { mutate, isPending } = api.user.login.useMutation({
     onSuccess: ({ user }) => {
-      if (user) router.push("/taskmanage");
+      if (user) {
+        if (user.category === "admin") {
+          router.push("/dashboard"); // Redirect admins to dashboard
+        } else if (user.category === "user") {
+          router.push("/taskmanage"); // Redirect regular users to taskmanage
+        }
+      }
     },
   });
+  
 
   const onSubmit = (data: SignUpFormValues) => {
     mutate(data);
