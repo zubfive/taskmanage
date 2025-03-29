@@ -30,26 +30,6 @@ export default function Dashboard() {
   if (isLoading) return <p className="text-center mt-10">Loading tasks...</p>;
   if (isError) return <p className="text-center text-red-500">Error loading tasks</p>;
 
-  // const handleEdit = (task) => {
-  //   setEditingTask(task);
-  //   setEditForm({
-  //     id: task.id,
-  //     title: task.title,
-  //     description: task.description,
-  //     status: task.status,
-  //   });
-  // };
-
-  // const handleUpdate = async () => {
-  //   try {
-  //     await updateTaskMutation.mutateAsync(editForm);
-  //     toast.success("Task updated successfully!");
-  //     setEditingTask(null);
-  //     await refetch();
-  //   } catch (error) {
-  //     toast.error("Failed to update task.");
-  //   }
-  // };
 
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this task?")) {
@@ -83,6 +63,12 @@ export default function Dashboard() {
                   <td className="border p-3">{task.status}</td>
                   <td className="border p-3 flex justify-center space-x-2">
 
+                    <button
+                      onClick={() => handleDelete(task.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -119,7 +105,6 @@ export default function Dashboard() {
               <option value="Completed">Completed</option>
             </select>
             <div className="flex justify-between">
-              
             </div>
           </div>
         </div>
