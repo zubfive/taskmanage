@@ -4,22 +4,34 @@ import { api } from "@/trpc/react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { redirect } from "next/navigation";
-import { PlusCircle, Edit, Trash2, CheckCircle, Clock, ArrowUpCircle, XCircle, ListFilter } from "lucide-react";
+import { PlusCircle, Edit, Trash2, CheckCircle, Clock, ArrowUpCircle, XCircle, ListFilter, ImageIcon } from "lucide-react";
+import { uploadToBackblaze } from "@/lib/backblaze";
 
 type Task = {
   id: string;
+  title: string | null;
+  description: string;
+  priority: "low" | "medium" | "high" | null;
+  status: "Pending" | "inProgress" | "Completed" | null;
+  createdAt: Date;
+  imageUrl?: string | null;
+};
+
+type TaskFormData = {
   title: string;
   description: string;
   priority: "low" | "medium" | "high";
   status: "Pending" | "inProgress" | "Completed";
+  imageUrl?: string;
 };
-
-type TaskFormData = Omit<Task, "id">;
 
 export default function TaskForm() {
   const { register, handleSubmit, reset, setValue } = useForm<TaskFormData>();
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const use = api.user.getUser.useQuery();
 
@@ -54,23 +66,46 @@ export default function TaskForm() {
   });
 
   // Handle form submission
-  const onSubmit = (data: TaskFormData) => {
+  const onSubmit = async (data: TaskFormData) => {
     if (editingTaskId) {
-      updateTask.mutate({ id: editingTaskId, ...data });
+      updateTask.mutate({
+        id: editingTaskId,
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        status: data.status,
+        imageUrl: data.imageUrl
+      });
     } else {
-      createTask.mutate(data);
+      try {
+        setIsUploading(true);
+        let imageUrl: string | undefined = undefined;
+        
+        if (selectedImage) {
+          imageUrl = await uploadToBackblaze(selectedImage);
+        }
+
+        createTask.mutate({
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          status: data.status,
+          imageUrl: imageUrl
+        });
+        
+        setSelectedImage(null);
+        setImagePreview(null);
+        reset();
+        setIsUploading(false);
+      } catch (error) {
+        console.error("Error creating task:", error);
+        setIsUploading(false);
+      }
     }
   };
 
   // Handle edit click
-  const handleEdit = (task: {
-    id: string;
-    title: string | null;
-    description: string;
-    priority: "low" | "medium" | "high" | null;
-    status: "Pending" | "inProgress" | "Completed" | null;
-    createdAt: Date;
-  }) => {
+  const handleEdit = (task: Task) => {
     setEditingTaskId(task.id);
     setValue("title", task.title ?? "");
     setValue("description", task.description);
@@ -96,11 +131,25 @@ export default function TaskForm() {
         return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 flex items-center gap-1 dark:bg-yellow-900 dark:text-yellow-100"><Clock size={14} /> Pending</span>;
     }
   };
+  
   // Filter tasks
   const filteredTasks = tasks?.filter(task => {
     if (activeFilter === "all") return true;
     return task.status === activeFilter;
   });
+
+  // Handle image selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -156,12 +205,59 @@ export default function TaskForm() {
                   <option value="high">high</option>
                 </select>
               </div>
+              
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Task Image</label>
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="image-upload"
+                    className="cursor-pointer py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 flex items-center"
+                  >
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    Choose Image
+                  </label>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
+                  {imagePreview && (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="h-10 w-10 object-cover rounded-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedImage(null);
+                          setImagePreview(null);
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5"
+                      >
+                        <XCircle size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="pt-2">
                 <button
                   type="submit"
+                  disabled={isUploading}
                   className="btn btn-primary w-full py-2 px-4"
                 >
-                  {editingTaskId ? (
+                  {isUploading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Uploading...
+                    </div>
+                  ) : editingTaskId ? (
                     <>
                       <Edit size={18} className="mr-2" />
                       Update Task
@@ -179,6 +275,8 @@ export default function TaskForm() {
                     onClick={() => {
                       setEditingTaskId(null);
                       reset();
+                      setSelectedImage(null);
+                      setImagePreview(null);
                     }}
                     className="btn btn-outline w-full mt-2 py-2 px-4"
                   >
@@ -278,6 +376,17 @@ export default function TaskForm() {
                       </button>
                     </div>
                   </div>
+                  
+                  {/* Image display */}
+                  {task.imageUrl && (
+                    <div className="mt-3">
+                      <img 
+                        src={task.imageUrl} 
+                        alt={`Task: ${task.title}`}
+                        className="w-full h-48 object-cover rounded-md" 
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

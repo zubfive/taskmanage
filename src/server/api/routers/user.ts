@@ -6,16 +6,8 @@ import { lucia } from "@/server/auth";
 import { cookies } from "next/headers";
 import { hash, verify } from "@node-rs/argon2";
 import { db } from "@/server/db";
-import { Cookie } from "lucia";
-
-
 
 export const userRouter = createTRPCRouter({
-
-
-
-
-
     registerUser: publicProcedure
     .input(
         z.object({
@@ -89,12 +81,6 @@ export const userRouter = createTRPCRouter({
         };
     }),
 
-
-
-
-
-
-
     login: publicProcedure
     .input(
         z.object({
@@ -103,17 +89,12 @@ export const userRouter = createTRPCRouter({
         }),
     )
     .mutation(async ({ input: { email, password } ,ctx }) => {
-
-        console.log({
-            host: ctx.host,
-        });
-    
         const response = await db
             .select({
                 password: usersTable.passwordHash,
                 id: usersTable.id,
                 email: usersTable.email,
-                category: usersTable.category, // Fetching the category from the database
+                category: usersTable.category,
             })
             .from(usersTable)
             .where(
@@ -139,7 +120,6 @@ export const userRouter = createTRPCRouter({
         const session = await lucia.createSession(user.id, {});
 
         const sessionCookie = lucia.createSessionCookie(session.id);
-        console.log(sessionCookie);
 
         (await cookies()).set(
             sessionCookie.name,
@@ -152,22 +132,21 @@ export const userRouter = createTRPCRouter({
             user: {
                 id: user.id,
                 email: user.email,
-                category: user.category // Including category in the response
+                category: user.category
             } 
         };
     }),
 
-
     getUser: protectedProcedure.query(async ({ ctx }) => {
-        const user = await db.query.usersTable.findFirst({
-        where: eq(usersTable.id, ctx.user.id),
-         });
-        
-         return user;
+        // Use the select method instead of query.usersTable
+        const users = await db
+            .select()
+            .from(usersTable)
+            .where(eq(usersTable.id, ctx.user.id));
+            
+        return users[0] || null;
     }),
         
-        
-
     logout: protectedProcedure.mutation(async ({ ctx }) => {
         await lucia.invalidateSession(ctx.session.id);
     
@@ -180,6 +159,5 @@ export const userRouter = createTRPCRouter({
         );
     
         return {};
-      }),
-
-});
+    }),
+}); 

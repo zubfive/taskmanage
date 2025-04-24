@@ -44,6 +44,7 @@ export const taskmanager = createTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
+    imageUrl: text("image_url"),
   },
 )
 

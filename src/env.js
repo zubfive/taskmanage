@@ -11,6 +11,9 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    BACKBLAZE_BUCKET_ID: z.string(),
+    BACKBLAZE_KEY_ID: z.string(),
+    BACKBLAZE_APP_KEY: z.string(),
   },
 
   /**
@@ -29,6 +32,9 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    BACKBLAZE_BUCKET_ID: process.env.BACKBLAZE_BUCKET_ID,
+    BACKBLAZE_KEY_ID: process.env.BACKBLAZE_KEY_ID, 
+    BACKBLAZE_APP_KEY: process.env.BACKBLAZE_APP_KEY,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { taskmanager, usersTable } from "@/server/db/schema";
+import { taskmanager } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 
 export const adminRouter = createTRPCRouter({
-
   // Create a new task
   createAdmin: protectedProcedure
     .input(
@@ -16,19 +15,12 @@ export const adminRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const user = await db.query.usersTable.findFirst({
-        where: eq(usersTable.id, ctx.user.id),
-      });
-
-      if (!user || user.category !== "admin") {
-        throw new Error("Unauthorized access. Only admins can create tasks.");
-      }
-
+      // Create the task with the user's ID
       const newTask = await db.insert(taskmanager).values({
         title: input.title,
         description: input.description,
         status: input.status,
-        userId: user.id,
+        userId: ctx.user.id,
       }).returning();
 
       return newTask;
@@ -37,14 +29,6 @@ export const adminRouter = createTRPCRouter({
   // Get all tasks (Admin can see all tasks)
   getAllAdminTasks: protectedProcedure
     .query(async ({ ctx }) => {
-      const user = await db.query.usersTable.findFirst({
-        where: eq(usersTable.id, ctx.user.id),
-      });
-
-      if (!user || user.category !== "admin") {
-        throw new Error("Unauthorized access. Only admins can view tasks.");
-      }
-
       return await db.select().from(taskmanager);
     }),
 
@@ -59,14 +43,6 @@ export const adminRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const user = await db.query.usersTable.findFirst({
-        where: eq(usersTable.id, ctx.user.id),
-      });
-
-      if (!user || user.category !== "admin") {
-        throw new Error("Unauthorized access. Only admins can update tasks.");
-      }
-
       return await db.update(taskmanager)
         .set({
           title: input.title,
@@ -81,14 +57,6 @@ export const adminRouter = createTRPCRouter({
   deleteAdmin: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const user = await db.query.usersTable.findFirst({
-        where: eq(usersTable.id, ctx.user.id),
-      });
-
-      if (!user || user.category !== "admin") {
-        throw new Error("Unauthorized access. Only admins can delete tasks.");
-      }
-
       return await db.delete(taskmanager).where(eq(taskmanager.id, input.id));
     }),
-});
+}); 
