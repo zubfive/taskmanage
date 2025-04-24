@@ -17,17 +17,39 @@ export const taskRouter = createTRPCRouter({
     })
   )
   .mutation(async ({ ctx, input }) => {
-    // Insert the new task with the user's ID from the session
-    const newTask = await ctx.db.insert(taskmanager).values({
-      title: input.title,
-      description: input.description,
-      priority: input.priority,
-      status: input.status,
-      userId: ctx.user.id, // Use the user ID directly from the context
-      imageUrl: input.imageUrl,
-    }).returning();
+    // Insert the new task with the user's ID from the context
+    try {
+      // Create base values without imageUrl to handle case where column doesn't exist
+      const baseValues = {
+        title: input.title,
+        description: input.description,
+        priority: input.priority,
+        status: input.status,
+        userId: ctx.user.id,
+      };
 
-    return newTask;
+      // If imageUrl is provided, include it in the values
+      const values = input.imageUrl 
+        ? { ...baseValues, imageUrl: input.imageUrl }
+        : baseValues;
+
+      const newTask = await ctx.db.insert(taskmanager).values(values).returning();
+      return newTask;
+    } catch (error) {
+      console.error("Error creating task:", error);
+      // If error contains "column imageUrl does not exist", try without imageUrl
+      if (error instanceof Error && error.message.includes("column") && error.message.includes("does not exist")) {
+        const newTask = await ctx.db.insert(taskmanager).values({
+          title: input.title,
+          description: input.description,
+          priority: input.priority,
+          status: input.status,
+          userId: ctx.user.id,
+        }).returning();
+        return newTask;
+      }
+      throw error;
+    }
   }),
 
   getAllTask: protectedProcedure.query(async ({ ctx }) => {
@@ -49,22 +71,46 @@ export const taskRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return db
-        .update(taskmanager)
-        .set({
+      try {
+        // Create base values without imageUrl
+        const baseValues = {
           title: input.title,
           description: input.description,
           priority: input.priority,
           status: input.status,
-          imageUrl: input.imageUrl,
-        })
-        .where(eq(taskmanager.id, input.id)); // Use eq() for filtering by ID
+        };
+
+        // If imageUrl is provided, include it in the values
+        const values = input.imageUrl 
+          ? { ...baseValues, imageUrl: input.imageUrl }
+          : baseValues;
+
+        return db
+          .update(taskmanager)
+          .set(values)
+          .where(eq(taskmanager.id, input.id));
+      } catch (error) {
+        console.error("Error updating task:", error);
+        // If error contains "column imageUrl does not exist", try without imageUrl
+        if (error instanceof Error && error.message.includes("column") && error.message.includes("does not exist")) {
+          return db
+            .update(taskmanager)
+            .set({
+              title: input.title,
+              description: input.description,
+              priority: input.priority,
+              status: input.status,
+            })
+            .where(eq(taskmanager.id, input.id));
+        }
+        throw error;
+      }
     }),
 
   delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      return db.delete(taskmanager).where(eq(taskmanager.id, input.id)); // Use eq() for filtering
+      return db.delete(taskmanager).where(eq(taskmanager.id, input.id));
     }),
 });
 

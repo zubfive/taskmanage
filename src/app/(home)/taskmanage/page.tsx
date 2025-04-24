@@ -44,9 +44,18 @@ export default function TaskForm() {
   // Create task mutation
   const createTask = api.task.create.useMutation({
     onSuccess: async () => {
+      setSelectedImage(null);
+      setImagePreview(null);
       reset();
+      setIsUploading(false);
       await refetch();
     },
+    onError: (error) => {
+      console.error("Error creating task:", error);
+      setIsUploading(false);
+      // Show an error message to the user
+      alert(`Error creating task: ${error.message}`);
+    }
   });
 
   // Update task mutation
@@ -82,7 +91,18 @@ export default function TaskForm() {
         let imageUrl: string | undefined = undefined;
         
         if (selectedImage) {
-          imageUrl = await uploadToBackblaze(selectedImage);
+          try {
+            imageUrl = await uploadToBackblaze(selectedImage);
+          } catch (uploadError) {
+            console.error("Error uploading image:", uploadError);
+            // If image upload fails, still allow task creation without image
+            if (confirm("Image upload failed. Create task without image?")) {
+              imageUrl = undefined;
+            } else {
+              setIsUploading(false);
+              return;
+            }
+          }
         }
 
         createTask.mutate({
@@ -92,13 +112,8 @@ export default function TaskForm() {
           status: data.status,
           imageUrl: imageUrl
         });
-        
-        setSelectedImage(null);
-        setImagePreview(null);
-        reset();
-        setIsUploading(false);
       } catch (error) {
-        console.error("Error creating task:", error);
+        console.error("Error in form submission:", error);
         setIsUploading(false);
       }
     }
@@ -383,7 +398,11 @@ export default function TaskForm() {
                       <img 
                         src={task.imageUrl} 
                         alt={`Task: ${task.title}`}
-                        className="w-full h-48 object-cover rounded-md" 
+                        className="w-full h-48 object-cover rounded-md"
+                        onError={(e) => {
+                          // Hide broken images
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                     </div>
                   )}
