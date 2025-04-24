@@ -20,6 +20,8 @@ import {
  */
 
 export const statusEnum = pgEnum("practice_status", ["Pending", "inProgress", "Completed"]);
+export const priorityEnum = pgEnum("practice_priority", ["low", "medium", "high"]);
+
 
 export const createTable = pgTableCreator((name) => `practice_${name}`);
 
@@ -38,6 +40,7 @@ export const taskmanager = createTable(
     userId: uuid("user_id")
     .notNull()
     .references(() => usersTable.id),
+    priority: priorityEnum("priority").default("low"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

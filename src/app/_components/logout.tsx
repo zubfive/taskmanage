@@ -2,9 +2,20 @@
 import { useRouter } from "next/navigation";
 import React from "react";
 // import { useToast } from "~/hooks/use-toast";
+import { LogOut } from "lucide-react";
 import { api } from "@/trpc/react";
 
-const LogoutButton = () => {
+interface LogoutButtonProps {
+  variant?: "primary" | "ghost";
+  className?: string;
+  children?: React.ReactNode;
+}
+
+const LogoutButton: React.FC<LogoutButtonProps> = ({ 
+  variant = "ghost", 
+  className = "", 
+  children 
+}) => {
   const router = useRouter();
 
   const { mutate, isPending } = api.user.logout.useMutation({
@@ -22,9 +33,21 @@ const LogoutButton = () => {
       onClick={() => {
         mutate();
       }}
-      className="mt-10 bg-blue-400 px-4 py-2"
+      className={`
+        flex items-center transition
+        ${variant === "primary" 
+          ? "bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg" 
+          : "text-gray-600 hover:text-indigo-600"
+        }
+        ${className}
+      `}
     >
-      Logout
+      {children || (
+        <>
+          <LogOut size={18} className="mr-2" />
+          {isPending ? "Signing out..." : "Sign Out"}
+        </>
+      )}
     </button>
   );
 };

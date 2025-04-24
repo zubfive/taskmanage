@@ -13,6 +13,7 @@ export const taskRouter = createTRPCRouter({
     z.object({
       title: z.string().min(1),
       description: z.string().min(1),
+      priority: z.enum(["low", "medium", "high"]).default("high"),
       status: z.enum(["Pending", "inProgress", "Completed"]).default("Pending"),
     })
   )
@@ -30,6 +31,7 @@ export const taskRouter = createTRPCRouter({
     const newTask = await ctx.db.insert(taskmanager).values({
       title: input.title,
       description: input.description,
+      priority:input.priority,
       status: input.status,
       userId: user.id, // Assign the task to the current user
     }).returning();
@@ -51,6 +53,7 @@ export const taskRouter = createTRPCRouter({
           id: z.string(),
           title: z.string(),
           description: z.string(),
+          priority: z.enum(["low", "medium", "high"]).default("high"),
           status: z.enum(["Pending", "inProgress" , "Completed"]).default("Pending"),
         })
       )
@@ -60,6 +63,7 @@ export const taskRouter = createTRPCRouter({
           .set({
             title: input.title,
             description: input.description,
+            priority: input.priority,
             status: input.status,
           })
           .where(eq(taskmanager.id, input.id)); // Use eq() for filtering by ID
